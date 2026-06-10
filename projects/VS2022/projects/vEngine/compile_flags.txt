@@ -1,0 +1,4 @@
+# -IC:\libs\raylib\src
+# -IC:\libs\raylib\build\raylib\include
+-IC:\libs\raylib\projects\VS2022\projects\vEngine\src
+-IC:\libs\raylib\projects\VS2022\projects\vEngine\include
