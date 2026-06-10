@@ -4,6 +4,10 @@
 #include "vengine.h"
 #include "physics_system.h"
 #include <stdint.h>
+#include <game_health_system.h>
+#include "game_archetypes.h"
+
+
 
 void GatherInput(EntityPool *pool, Camera camera, int playerIdx,
                  bool selected[MAX_ENTITIES], FrameState *fs) {
@@ -149,63 +153,6 @@ void UpdateSpawning(EntityPool *pool, int playerIdx, float dt, FrameState *fs) {
   }
 }
 
-void InitUnitStats(EntityPool *pool, int idx, UnitArchetype arch,
-                   Faction faction) {
-  pool->meta[idx].archetype = arch;
-  pool->meta[idx].skill = SKILL_NONE;
-  pool->meta[idx].faction = faction;
-
-  switch (arch) {
-  case ARCH_MELEE:
-    pool->moveSpeed[idx] = 2.8f;
-    pool->attackRange[idx] = 1.2f;
-    pool->attackCooldown[idx] = 0.55f;
-    pool->attackDamage[idx] = 14;
-    pool->meta[idx].skill = SKILL_DASH;
-    pool->skillCooldown[idx] = 5.0f;
-    break;
-  case ARCH_RANGED:
-    pool->moveSpeed[idx] = 3.9f;
-    pool->attackRange[idx] = 8.5f;
-    pool->attackCooldown[idx] = 0.45f;
-    pool->attackDamage[idx] = 10;
-    pool->meta[idx].skill = SKILL_BURST;
-    pool->skillCooldown[idx] = 6.0f;
-    break;
-  case ARCH_CASTER:
-    pool->moveSpeed[idx] = 1.3f;
-    pool->attackRange[idx] = 9.5f;
-    pool->attackCooldown[idx] = 0.9f;
-    pool->attackDamage[idx] = 12;
-    pool->meta[idx].skill = SKILL_NOVA;
-    pool->skillCooldown[idx] = 8.0f;
-    break;
-  case ARCH_BUFFER:
-    pool->moveSpeed[idx] = 1.5f;
-    pool->attackRange[idx] = 6.5f;
-    pool->attackCooldown[idx] = 0.8f;
-    pool->attackDamage[idx] = 6;
-    pool->meta[idx].skill = SKILL_AURA;
-    pool->skillCooldown[idx] = 0.0f;
-    break;
-
-  case ARCH_PLAYER:
-    pool->moveSpeed[idx] = 3.5f;
-    pool->attackRange[idx] = 6.5f;
-    pool->attackCooldown[idx] = 0.8f;
-    pool->attackDamage[idx] = 6;
-    pool->meta[idx].skill = SKILL_NOVA;
-    pool->skillCooldown[idx] = 0.0f;
-    break;
-  default:
-    break;
-  }
-
-  pool->fireCooldown[idx] = 0.0f;
-  pool->skillTimer[idx] = 0.0f;
-  pool->buffTimer[idx] = 0.0f;
-  pool->buffFireRateMul[idx] = 1.0f;
-}
 
 void initTestScene(int playerIdx) {
   if (playerIdx < 0)
@@ -251,6 +198,7 @@ int spawnPlayer() {
   if (playerIdx >= 0) {
     PhysicsSystem_SetBody(&world, playerIdx, 0.0f, 1.0f); // radius=0 → derived from size
     AttachVisual(&world, playerIdx, VISUAL_PLAYER, 0, 1.0f);
+    InitUnitStats(&world, playerIdx, ARCH_PLAYER, FACTION_PLAYER);
   }
 
   return playerIdx;

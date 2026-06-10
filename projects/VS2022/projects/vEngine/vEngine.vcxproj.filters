@@ -69,6 +69,15 @@
     <ClCompile Include="..\..\..\..\..\..\cygwin64\home\giuli\vengine_asset_pipeline\skinning_worker.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\game_pool_data.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game_health_system.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game_archetypes.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\raylib.h">
@@ -120,6 +129,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\engine_task_scheduler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\game_pool_data.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\game_stat_types.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\game_health_system.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\game_archetypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

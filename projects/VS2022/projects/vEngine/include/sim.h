@@ -19,6 +19,7 @@ typedef struct {
   Query qSelectable;
   Query qPhysics;
   Query qAnimated;
+  Query qHealth;
 
   QueryDef queryDefs[9];
   int queryDefCount;

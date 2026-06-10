@@ -3,6 +3,7 @@
 #include "render.h"
 #include "render_assets.h"
 #include "physics_system.h"
+#include "game_health_system.h"
 
 // ---------------------------------------------------------------------------
 // System functions
@@ -106,6 +107,13 @@ static void EnsureQueries(FrameState* fs)
         .excluded = 0,
         .enabled = true,
     };
+    fs->queryDefs[fs->queryDefCount++] = (QueryDef){
+    .name = "Health",
+    .query = &fs->qHealth,
+    .required = COMP_ALIVE,
+    .excluded = 0,
+    .enabled = true,
+    };
 }
 
 static void BuildQueries(EntityPool* pool, FrameState* fs)
@@ -126,6 +134,7 @@ static void EnsureSystems(FrameState* fs, System* systems, int* systemCount) {
     RegisterSystem(systems, systemCount, 16, "Movement", &fs->qPhysics, SysMovement, PHASE_MOVEMENT);
     RegisterSystem(systems, systemCount, 16, "Animation", &fs->qAnimated, SysAnimation, PHASE_ANIMATION);
     RegisterSystem(systems, systemCount, 16, "DestroyCleanup", &fs->qDestroy, SysDestroyCleanup, PHASE_CLEANUP);
+    RegisterSystem(systems, systemCount, 16, "HealthCleanup",&fs->qHealth, SysHealthCleanup, PHASE_CLEANUP);
 }
 
 // ---------------------------------------------------------------------------

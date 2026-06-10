@@ -139,6 +139,9 @@
     <ClCompile Include="src\combat.c" />
     <ClCompile Include="src\engine_task_scheduler.c" />
     <ClCompile Include="src\game.c" />
+    <ClCompile Include="src\game_archetypes.c" />
+    <ClCompile Include="src\game_health_system.c" />
+    <ClCompile Include="src\game_pool_data.c" />
     <ClCompile Include="src\input.c" />
     <ClCompile Include="src\lifecycle.c" />
     <ClCompile Include="src\main.c" />
@@ -155,6 +158,10 @@
   <ItemGroup>
     <ClInclude Include="include\engine_task_scheduler.h" />
     <ClInclude Include="include\game.h" />
+    <ClInclude Include="include\game_archetypes.h" />
+    <ClInclude Include="include\game_health_system.h" />
+    <ClInclude Include="include\game_pool_data.h" />
+    <ClInclude Include="include\game_stat_types.h" />
     <ClInclude Include="include\glad.h" />
     <ClInclude Include="include\physics.h" />
     <ClInclude Include="include\physics_system.h" />

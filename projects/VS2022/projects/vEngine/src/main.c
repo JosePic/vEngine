@@ -2,6 +2,8 @@
 #include "render_assets.h"
 #include "sim.h"
 #include "physics_system.h"
+#include "game_pool_data.h"
+
 
 void initCamera(Camera *camera) {
   camera->position = (Vector3){0.0f, 2.0f, -30.0f};
@@ -25,6 +27,8 @@ int main(void) {
 
   InitEngineThreadPool(4);
 
+  GamePool_Init(&world);  // Initialize GamePool after EntityPool
+
   Camera camera = {0};
   initCamera(&camera);
   RenderAssets_Init();
@@ -38,6 +42,7 @@ int main(void) {
 
   static bool selected[MAX_ENTITIES] = {0};
   selected[playerIdx] = true;
+
 
   SetTargetFPS(60);
 
