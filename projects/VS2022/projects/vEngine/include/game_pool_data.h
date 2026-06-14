@@ -2,6 +2,28 @@
 
 #include "game_stat_types.h"
 #include "vengine.h"
+#include "interaction_resolver.h"
+
+
+typedef struct
+{
+    float damage;
+    float healing;
+} PendingHealth;
+
+typedef struct
+{
+    bool destroy;
+} PendingLifetime;
+
+typedef struct
+{
+    bool spawnProjectile;
+    int owner;
+    Vector3 start;
+    Vector3 dir;
+} PendingSpawn;
+
 
 // ---------------------------------------------------------------------------
 // GamePool: Parallel storage for all game-specific data
@@ -14,29 +36,36 @@
 // ---------------------------------------------------------------------------
 typedef struct {
     // --- Combat System ---
-    CombatStats* combatStats;       // [count] allocated at init
-    CombatState* combatState;       // [count] allocated at init
+    CombatStats* combatStats;
+    CombatState* combatState;
 
     // --- Health System ---
-    HealthStats* healthStats;       // [count] allocated at init
+    HealthStats* healthStats;
 
     // --- Skill System ---
-    SkillStates* skillStates;       // [count] allocated at init
+    SkillStates* skillStates;
 
-    // --- Resource (Mana/Energy/etc) ---
-    ResourceState* resourceState;   // [count] allocated at init
+    // --- Resource ---
+    ResourceState* resourceState;
 
-    // --- Buffs & Status Effects ---
-    BuffStack* buffs;               // [count] allocated at init
+    // --- Buffs ---
+    BuffStack* buffs;
 
     // --- Behavior ---
-    BehaviorData* behavior;         // [count] allocated at init
+    BehaviorData* behavior;
 
-    // --- Back-reference (for convenience) ---
+    // --- Interaction Framework ---
+    InteractionResolver resolver;
+
+    PendingHealth* pendingHealth;
+    PendingLifetime* pendingLifetime;
+    PendingSpawn* pendingSpawn;
+
+    // --- Back-reference ---
     EntityPool* pool;
 
-    // --- Capacity tracking ---
-    int capacity;                   // Size of allocated arrays
+    // --- Capacity ---
+    int capacity;
 
 } GamePool;
 
@@ -54,9 +83,15 @@ extern GamePool gamePool;
 void GamePool_Init(EntityPool* pool);
 
 /**
- * Shutdown GamePool and free all allocated memory.
+ * Shutdown GamePool and free all asllocated memory.
  */
 void GamePool_Shutdown(void);
+
+/**
+ * Clear a single entity's game data (for respawn/reset).
+ */
+void GamePool_BeginFrame(void);
+
 
 /**
  * Clear a single entity's game data (for respawn/reset).

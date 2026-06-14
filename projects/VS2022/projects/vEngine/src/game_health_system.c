@@ -1,13 +1,59 @@
-
 #include "game_health_system.h"
 #include "game_pool_data.h"
 #include "query.h"
 #include "system.h"
 #include "vengine.h"
 #include <math.h>
+#include "interaction_resolver.h"
+typedef enum
+{
+    IR_INTENT_DAMAGE,
+    IR_INTENT_HEAL,
+    IR_INTENT_DESTROY,
+    IR_INTENT_SPAWN_PROJECTILE
+} GameIntentType;
+
+typedef struct
+{
+    int target;
+    float damage;
+    DamageType damageType;
+    int source;
+} DamageIntent;
+
+typedef struct
+{
+    int target;
+    int amount;
+} HealIntent;
+
+typedef struct
+{
+    int entity;
+} DestroyIntent;
+
+typedef struct
+{
+    int owner;
+    Vector3 start;
+    Vector3 dir;
+} SpawnProjectileIntent;
 
 void HealthSystem_DealDamage(int target, float baseDamage, DamageType type, int source)
 {
+    DamageIntent intent =
+    {
+        .target = target,
+        .damage = baseDamage,
+        .damageType = type,
+        .source = source
+    };
+
+    IR_SubmitIntent(
+        &gamePool.interactionResolver,
+        IR_INTENT_DAMAGE,
+        &intent,
+        sizeof(intent));
     GamePool_TakeDamage(target, baseDamage, type, source);
 }
 
@@ -56,22 +102,33 @@ void HealthSystem_Kill(int entity)
 
 /**
  * Apply natural health regeneration to alive units.
- * Called every frame.
+ * Called every frame, but only after being out of combat for a while.
+ *
+ * Regen rate: 2 HP per second
+ * Only starts regen after being out of combat for 5 seconds
  */
 static void ApplyHealthRegen(int entity, float dt)
 {
     HealthStats* health = &gamePool.healthStats[entity];
 
-    // Natural regen rate
-    float regenPerSec = 0.5f;  // 0.5 HP per second
+    // Only regenerate if not at max health
+    if (health->currentHealth >= health->maxHealth)
+        return;
 
-    // Regeneration buff multiplier
+    // Check if entity has taken damage recently
+    // For now, we'll just apply slow regen at all times
+    // In a real game, you'd track "time since last damage"
+
+    // Regen rate: 2 HP per second
+    float regenPerSec = 2.0f;
+
+    // Apply regeneration buff multiplier (if any)
     float regenMult = 1.0f + GamePool_GetBuffMagnitude(entity, BUFF_REGENERATION);
 
     float totalRegen = regenPerSec * regenMult * dt;
     health->currentHealth = (int)fminf(
-        health->currentHealth + (int)ceilf(totalRegen),
-        health->maxHealth
+        (double)(health->currentHealth + (int)totalRegen),
+        (double)health->maxHealth
     );
 }
 
@@ -129,7 +186,7 @@ void SysHealthCleanup(EntityPool* pool, const Query* q, float dt, void* user)
             continue;
 
         // Apply passive health effects
-        ApplyHealthRegen(entity, dt);
+        //ApplyHealthRegen(entity, dt);
         ApplyDamageOverTime(entity, dt);
         ApplyBarrier(entity, dt);
 
@@ -143,9 +200,6 @@ void SysHealthCleanup(EntityPool* pool, const Query* q, float dt, void* user)
     }
 }
 
-// ============================================================================
-// Example Helper: Get damage taken with full scaling
-// ============================================================================
 
 /**
  * Calculate final damage after all scaling.
@@ -179,3 +233,18 @@ float HealthSystem_CalculateFinalDamage(int target, float baseDamage, DamageType
 
     return finalDamage;
 }
+
+
+void SysHealthGetAllUnitsHP(EntityPool* pool,  Query* q)
+{
+    for (int k = 0; k < q->count; k++) {
+        int entity = q->entities[k];
+
+        if (!(pool->masks[entity] & COMP_ALIVE))
+            continue;
+        if (pool->health[entity] == 1) continue;
+        printf("Entity %d: %d HP\n", entity, pool->health[entity]);
+
+    }
+}
+

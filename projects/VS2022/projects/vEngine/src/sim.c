@@ -4,6 +4,7 @@
 #include "render_assets.h"
 #include "physics_system.h"
 #include "game_health_system.h"
+#include "projectile.h"
 
 // ---------------------------------------------------------------------------
 // System functions
@@ -65,6 +66,13 @@ static void EnsureQueries(FrameState* fs)
         .name = "Combat",
         .query = &fs->qCombat,
         .required = COMP_POSITION | COMP_HEALTH | COMP_ALIVE,
+        .excluded = 0,
+        .enabled = true,
+    };
+    fs->queryDefs[fs->queryDefCount++] = (QueryDef){
+        .name = "Projectiles",
+        .query = &fs->qProjectiles,
+        .required = COMP_IS_PROJECTILE | COMP_ALIVE,
         .excluded = 0,
         .enabled = true,
     };
@@ -132,9 +140,11 @@ static void EnsureSystems(FrameState* fs, System* systems, int* systemCount) {
     RegisterSystem(systems, systemCount, 16, "EnemyAI", &fs->qEnemyAI, SysEnemyAI, PHASE_AI);
     RegisterSystem(systems, systemCount, 16, "Combat", &fs->qCombat, SysCombat, PHASE_COMBAT);
     RegisterSystem(systems, systemCount, 16, "Movement", &fs->qPhysics, SysMovement, PHASE_MOVEMENT);
+    // Run projectile hits AFTER physics so we detect bouncing projectiles correctly
+    RegisterSystem(systems, systemCount, 16, "ProjectileHits", &fs->qProjectiles, SysProjectileHits, PHASE_MOVEMENT);
     RegisterSystem(systems, systemCount, 16, "Animation", &fs->qAnimated, SysAnimation, PHASE_ANIMATION);
     RegisterSystem(systems, systemCount, 16, "DestroyCleanup", &fs->qDestroy, SysDestroyCleanup, PHASE_CLEANUP);
-    RegisterSystem(systems, systemCount, 16, "HealthCleanup",&fs->qHealth, SysHealthCleanup, PHASE_CLEANUP);
+    RegisterSystem(systems, systemCount, 16, "HealthCleanup", &fs->qHealth, SysHealthCleanup, PHASE_CLEANUP);
 }
 
 // ---------------------------------------------------------------------------
@@ -183,7 +193,7 @@ void RunFrame(EntityPool* pool, Camera* camera, int playerIdx,
     // Structural changes happened during sim — rebuild so later phases
     // (cleanup, render) see a consistent entity set.
     BuildQueries(pool, fs);
-
+    SysHealthGetAllUnitsHP(pool, &fs->qHealth);
     EnsureSystems(fs, systems, &systemCount);
     RunSystems(systems, systemCount, PHASE_CLEANUP, pool, dt, &playerIdx);
 

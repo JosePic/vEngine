@@ -143,15 +143,16 @@
     <ClCompile Include="src\game_health_system.c" />
     <ClCompile Include="src\game_pool_data.c" />
     <ClCompile Include="src\input.c" />
+    <ClCompile Include="src\interaction_resolver.c" />
     <ClCompile Include="src\lifecycle.c" />
     <ClCompile Include="src\main.c" />
     <ClCompile Include="src\physics.c" />
     <ClCompile Include="src\physics_system.c" />
+    <ClCompile Include="src\projectile.c" />
     <ClCompile Include="src\raylib_model_loader.c" />
     <ClCompile Include="src\render_assets.c" />
     <ClCompile Include="src\render.c" />
     <ClCompile Include="src\sim.c" />
-    <ClCompile Include="src\skinning_worker.c" />
     <ClCompile Include="src\system.c" />
     <ClCompile Include="src\world.c" />
   </ItemGroup>
@@ -163,8 +164,10 @@
     <ClInclude Include="include\game_pool_data.h" />
     <ClInclude Include="include\game_stat_types.h" />
     <ClInclude Include="include\glad.h" />
+    <ClInclude Include="include\interaction_resolver.h" />
     <ClInclude Include="include\physics.h" />
     <ClInclude Include="include\physics_system.h" />
+    <ClInclude Include="include\projectile.h" />
     <ClInclude Include="include\query.h" />
     <ClInclude Include="include\render_assets.h" />
     <ClInclude Include="include\raylib.h" />

@@ -41,3 +41,6 @@ void HealthSystem_Kill(int entity);
  * Processes death markers and cleans up dead entities.
  */
 void SysHealthCleanup(EntityPool* pool, const Query* q, float dt, void* user);
+
+
+void SysHealthGetAllUnitsHP(EntityPool* pool,  Query* q);

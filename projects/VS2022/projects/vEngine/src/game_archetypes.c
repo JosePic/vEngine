@@ -136,7 +136,7 @@ static const ArchetypeConfig archetypeConfigs[ARCH_COUNT] = {
             .attackSpeed = 1.0f,
         },
         .healthStats = {
-            .maxHealth = 100,
+            .maxHealth = 10000,
             .currentHealth = 100,
             .armor = 5,
             .magicResist = 0.0f,

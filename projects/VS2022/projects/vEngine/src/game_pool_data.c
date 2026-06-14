@@ -32,12 +32,35 @@ void GamePool_Init(EntityPool* pool)
     memset(gamePool.buffs, 0, sizeof(BuffStack) * MAX_ENTITIES);
     memset(gamePool.behavior, 0, sizeof(BehaviorData) * MAX_ENTITIES);
 
+    gamePool.pendingHealth =
+        calloc(MAX_ENTITIES, sizeof(PendingHealth));
+
+    gamePool.pendingLifetime =
+        calloc(MAX_ENTITIES, sizeof(PendingLifetime));
+
     // Initialize default values
     for (int i = 0; i < MAX_ENTITIES; i++) {
         gamePool.behavior[i].targetEntity = -1;
         gamePool.combatState[i].canAttack = true;
         gamePool.combatState[i].attackSpeedMultiplier = 1.0f;
     }
+
+    IR_Init(&gamePool.resolver);
+
+    IR_RegisterResolver(
+        &gamePool.resolver,
+        ResolveHealth,
+        NULL);
+
+    IR_RegisterResolver(
+        &gamePool.resolver,
+        ResolveLifetime,
+        NULL);
+
+    IR_RegisterResolver(
+        &gamePool.resolver,
+        ResolveSpawning,
+        NULL);
 }
 
 void GamePool_Shutdown(void)
@@ -49,6 +72,9 @@ void GamePool_Shutdown(void)
     if (gamePool.resourceState) free(gamePool.resourceState);
     if (gamePool.buffs) free(gamePool.buffs);
     if (gamePool.behavior) free(gamePool.behavior);
+    if (gamePool.pendingHealth) free(gamePool.pendingHealth);
+    if (gamePool.pendingLifetime) free(gamePool.pendingLifetime);
+
 
     memset(&gamePool, 0, sizeof(GamePool));
 }
@@ -65,6 +91,7 @@ void GamePool_ClearEntity(int entity)
     memset(&gamePool.resourceState[entity], 0, sizeof(ResourceState));
     memset(&gamePool.buffs[entity], 0, sizeof(BuffStack));
     memset(&gamePool.behavior[entity], 0, sizeof(BehaviorData));
+
 
     gamePool.behavior[entity].targetEntity = -1;
     gamePool.combatState[entity].canAttack = true;
@@ -88,7 +115,7 @@ void GamePool_InitFromArchetype(int entity, const ArchetypeConfig* archetype)
     // Initialize resource
     gamePool.resourceState[entity].maxResource = archetype->startingResource;
     gamePool.resourceState[entity].currentResource = archetype->startingResource;
-    gamePool.resourceState[entity].regenRate = 10.0f;  // Default, can be customized
+    gamePool.resourceState[entity].regenRate = 10.0f;
 
     // Initialize behavior
     gamePool.behavior[entity].state = BEHAVIOR_IDLE;
@@ -106,17 +133,14 @@ bool GamePool_AddBuff(int entity, BuffType type, float duration, float magnitude
 
     BuffStack* stack = &gamePool.buffs[entity];
 
-    // Check for existing buff of same type (stack or replace)
     for (int i = 0; i < stack->count; i++) {
         if (stack->buffs[i].type == type) {
-            // For most buffs, extend duration rather than stack
             stack->buffs[i].timeRemaining = (float)fmaxf((double)stack->buffs[i].timeRemaining, (double)duration);
             stack->buffs[i].magnitude = (float)fmaxf((double)stack->buffs[i].magnitude, (double)magnitude);
             return true;
         }
     }
 
-    // Add new buff if space available
     if (stack->count >= MAX_BUFFS_PER_ENTITY)
         return false;
 
@@ -138,7 +162,6 @@ void GamePool_RemoveBuff(int entity, BuffType type)
 
     for (int i = 0; i < stack->count; i++) {
         if (stack->buffs[i].type == type) {
-            // Swap with last and shrink
             stack->buffs[i] = stack->buffs[--stack->count];
             return;
         }
@@ -153,11 +176,9 @@ void GamePool_ClearBuffs(int entity, BuffType typeFilter)
     BuffStack* stack = &gamePool.buffs[entity];
 
     if (typeFilter == 0xFF) {
-        // Clear all buffs
         stack->count = 0;
     }
     else {
-        // Clear only buffs matching filter
         int writeIdx = 0;
         for (int i = 0; i < stack->count; i++) {
             if (stack->buffs[i].type != typeFilter) {
@@ -217,7 +238,7 @@ void GamePool_TakeDamage(int target, float baseDamage, DamageType type, int sour
         finalDamage *= (1.0f - health->magicResist);
     }
 
-    // Apply vulnerability buff (if active)
+    // Apply vulnerability buff
     float vulnMult = 1.0f + GamePool_GetBuffMagnitude(target, BUFF_VULNERABLE);
     finalDamage *= vulnMult;
 
@@ -227,7 +248,7 @@ void GamePool_TakeDamage(int target, float baseDamage, DamageType type, int sour
     // Apply to health
     health->currentHealth -= (int)ceilf((double)finalDamage);
 
-    // Sync to legacy health field
+    // IMPORTANT: Sync immediately so pool->health reflects the change
     gamePool.pool->health[target] = health->currentHealth;
 
     // Mark for death if health depleted
@@ -287,20 +308,16 @@ float GamePool_GetEffectiveAttackCooldown(int entity)
     CombatStats* stats = &gamePool.combatStats[entity];
     CombatState* state = &gamePool.combatState[entity];
 
-    // Base cooldown
     float cooldown = stats->attackCooldown;
 
-    // Apply haste buff
     float hasteMult = 1.0f + GamePool_GetBuffMagnitude(entity, BUFF_HASTE);
 
-    // Apply slow buff
     float slowMult = 1.0f - GamePool_GetBuffMagnitude(entity, BUFF_SLOW);
-    slowMult = (float)fmaxf((double)slowMult, 0.2);  // Minimum 20% speed
+    slowMult = (float)fmaxf((double)slowMult, 0.2);
 
-    // Apply stat multiplier
     cooldown /= (state->attackSpeedMultiplier * hasteMult * slowMult);
 
-    return (float)fmaxf((double)cooldown, 0.1);  // Minimum 0.1s cooldown
+    return (float)fmaxf((double)cooldown, 0.1);
 }
 
 float GamePool_GetEffectiveMoveSpeed(int entity)
@@ -310,12 +327,10 @@ float GamePool_GetEffectiveMoveSpeed(int entity)
 
     CombatStats* stats = &gamePool.combatStats[entity];
 
-    // Apply haste buff
     float hasteMult = 1.0f + GamePool_GetBuffMagnitude(entity, BUFF_HASTE);
 
-    // Apply slow buff
     float slowMult = 1.0f - GamePool_GetBuffMagnitude(entity, BUFF_SLOW);
-    slowMult = (float)fmaxf((double)slowMult, 0.2);  // Minimum 20% speed
+    slowMult = (float)fmaxf((double)slowMult, 0.2);
 
     return stats->moveSpeed * hasteMult * slowMult;
 }

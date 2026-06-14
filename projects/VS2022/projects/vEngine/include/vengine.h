@@ -81,6 +81,7 @@ enum {
     COMP_DYNAMIC_MOVILITY = 1ull << 9,
     COMP_MODEL = 1ull << 10,
     COMP_ANIMATED = 1ull << 11,
+    COMP_IS_PROJECTILE = 1ull << 12,
 
     // Entity participates in the physics module simulation as a dynamic
     // circle body.  Set at spawn time via PhysicsSystem_SetBody().

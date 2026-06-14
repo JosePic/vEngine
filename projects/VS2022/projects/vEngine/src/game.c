@@ -132,7 +132,7 @@ void UpdateSpawning(EntityPool *pool, int playerIdx, float dt, FrameState *fs) {
   if (fs->enemySpawnTimer > 0.0f)
     return;
 
-  fs->enemySpawnTimer = 13.25f;
+  fs->enemySpawnTimer = 5.25f;
   Vector3 p = pool->positions[playerIdx];
   float r = WORLD_HALF * 0.45f;
   float ang = (float)GetRandomValue(0, 360) * DEG2RAD;

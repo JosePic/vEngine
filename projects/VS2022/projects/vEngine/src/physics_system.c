@@ -4,7 +4,44 @@
 #include <math.h>
 #include <string.h>
 #include "query.h"
-
+// ---------------------------------------------------------------------------
+// Physics System Overview
+//
+// This module bridges the low-level 2D physics engine (physics.h) with the
+// 3D game's entity system. It handles:
+//
+//   1. COORDINATE MAPPING:
+//      The game is 3D isometric; the physics engine is 2D (for performance).
+//      Mapping convention:
+//        Game X-axis      ↔  Physics X-axis
+//        Game Z-axis (depth) ↔  Physics Y-axis
+//        Game Y-axis (height) is untouched (managed by ApplyGroundLock)
+//
+//   2. SPARSE-TO-DENSE CONVERSION:
+//      EntityPool uses sparse storage (entities may have gaps).
+//      Physics uses dense SoA arrays for SIMD performance.
+//      PhysicsSystem_SyncIn() packs active physics entities.
+//      PhysicsSystem_WriteBack() unpacks results.
+//
+//   3. ENTITY LIFECYCLE:
+//      Only entities with COMP_PHYSICS flag participate in physics.
+//      Static walls/terrain must NOT have COMP_PHYSICS.
+//      This keeps the physics budget low.
+//
+// Pipeline each frame:
+//   1. BuildQueries() → identify entities with COMP_PHYSICS
+//   2. PhysicsSystem_ECSRun() called in PHASE_MOVEMENT:
+//      a. PhysicsSystem_UpdateMovementIntent() (velocity from AI/player)
+//      b. PhysicsSystem_SyncIn() (pack into dense arrays)
+//      c. PhysicsIntegrateSIMD() (update positions)
+//      d. PhysicsDetectCollisionsGridSIMD() (grid-based broadphase)
+//      e. PhysicsResolveCollisions() (resolve overlaps)
+//      f. PhysicsApplyVelocityResponse() (impulse resolution)
+//      g. PhysicsSystem_ApplyBounds() (world bounds)
+//      h. PhysicsSystem_ApplyGroundLock() (maintain ground plane)
+//      i. PhysicsSystem_WriteBack() (unpack back to pool)
+//
+// ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
 // Static SoA backing storage for the physics world.
 //
