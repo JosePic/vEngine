@@ -50,16 +50,28 @@ void HealthSystem_DealDamage(int target, float baseDamage, DamageType type, int 
     };
 
     IR_SubmitIntent(
-        &gamePool.interactionResolver,
+        &gamePool.resolver,
         IR_INTENT_DAMAGE,
         &intent,
         sizeof(intent));
     GamePool_TakeDamage(target, baseDamage, type, source);
 }
 
-void HealthSystem_Heal(int target, int amount)
+void HealthSystem_Heal(
+    int target,
+    int amount)
 {
-    GamePool_Heal(target, amount);
+    HealIntent intent =
+    {
+        .target = target,
+        .amount = amount
+    };
+
+    IR_SubmitIntent(
+        &gamePool.resolver,
+        IR_INTENT_HEAL,
+        &intent,
+        sizeof(intent));
 }
 
 bool HealthSystem_IsAlive(int entity)
@@ -88,13 +100,18 @@ float HealthSystem_GetHealthPercent(int entity)
 
 void HealthSystem_Kill(int entity)
 {
-    if (entity < 0 || entity >= MAX_ENTITIES)
-        return;
+    DestroyIntent intent =
+    {
+        .entity = entity
+    };
 
-    gamePool.healthStats[entity].currentHealth = 0;
-    gamePool.pool->health[entity] = 0;
-    MarkPendingDestroy(gamePool.pool, entity);
+    IR_SubmitIntent(
+        &gamePool.resolver,
+        IR_INTENT_DESTROY,
+        &intent,
+        sizeof(intent));
 }
+
 
 // ============================================================================
 // Buff Application During Combat

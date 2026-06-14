@@ -63,6 +63,21 @@ void GamePool_Init(EntityPool* pool)
         NULL);
 }
 
+void GamePool_BeginFrame(void)
+{
+    memset(
+        gamePool.pendingHealth,
+        0,
+        sizeof(PendingHealth) * gamePool.capacity);
+
+    memset(
+        gamePool.pendingLifetime,
+        0,
+        sizeof(PendingLifetime) * gamePool.capacity);
+
+    IR_BeginFrame(&gamePool.resolver);
+}
+
 void GamePool_Shutdown(void)
 {
     if (gamePool.combatStats) free(gamePool.combatStats);
