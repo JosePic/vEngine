@@ -3,8 +3,38 @@
 #include <string.h>
 #include <math.h>
 #include <stdlib.h>
+#include "interaction_resolver.h"
 
 GamePool gamePool = { 0 };
+
+
+/*
+*  Temporarily putting all resolver logic here, this should be moved to its own place.
+*/
+
+void ResolveHealth()
+{
+
+}
+
+
+void ResolveLifetime()
+{
+
+}
+void ResolveSpawning()
+{
+
+}
+void RegisterGameResolvers(InteractionResolver* resolver)
+{
+    IR_RegisterResolver(resolver, ResolveHealth, NULL);
+    IR_RegisterResolver(resolver, ResolveLifetime, NULL);
+    IR_RegisterResolver(resolver, ResolveSpawning, NULL);
+}
+
+
+
 
 void GamePool_Init(EntityPool* pool)
 {
@@ -46,21 +76,8 @@ void GamePool_Init(EntityPool* pool)
     }
 
     IR_Init(&gamePool.resolver);
+    RegisterGameResolvers(&gamePool.resolver);
 
-    IR_RegisterResolver(
-        &gamePool.resolver,
-        ResolveHealth,
-        NULL);
-
-    IR_RegisterResolver(
-        &gamePool.resolver,
-        ResolveLifetime,
-        NULL);
-
-    IR_RegisterResolver(
-        &gamePool.resolver,
-        ResolveSpawning,
-        NULL);
 }
 
 void GamePool_BeginFrame(void)
