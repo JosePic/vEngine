@@ -304,10 +304,6 @@ void SysHealthCleanup(EntityPool* pool, const Query* q, float dt, void* user)
         // Sync health back to legacy pool field
         gamePool.pool->health[entity] = gamePool.healthStats[entity].currentHealth;
 
-        // Mark dead entities for destruction
-        if (gamePool.healthStats[entity].currentHealth <= 0) {
-            MarkPendingDestroy(pool, entity);
-        }
     }
 }
 

@@ -41,6 +41,18 @@ typedef struct
 } DestroyChange;
 
 
+typedef struct
+{
+    int target;
+    int amount;
+} DamageChange;
+
+
+typedef struct
+{
+    int target;
+    int amount;
+} HealChange;
 
 void ResolveLifetime(
     InteractionResolver* resolver,
@@ -49,10 +61,47 @@ void ResolveLifetime(
     (void)userData;
 
     uint32_t count;
-    const IR_Record* intents =
-        IR_GetIntents(resolver, &count);
+    const IR_Record* changes =
+        IR_GetChanges(resolver, &count);
 
     for (uint32_t i = 0; i < count; i++)
+    {
+        const IR_Record* r = &changes[i];
+
+        if (r->type != IR_CHANGE_DAMAGE)
+            continue;
+
+        DamageChange* dmg =
+            (DamageChange*)r->data;
+
+        HealthStats* health =
+            &gamePool.healthStats[dmg->target];
+
+        int predictedHealth =
+            health->currentHealth - dmg->amount;
+
+        if (predictedHealth > 0)
+            continue;
+
+        DestroyChange out =
+        {
+            .entity = dmg->target
+        };
+
+        IR_SubmitChange(
+            resolver,
+            IR_CHANGE_DESTROY,
+            &out,
+            sizeof(out));
+    }
+
+    // explicit kill intents still work
+
+    uint32_t intentCount;
+    const IR_Record* intents =
+        IR_GetIntents(resolver, &intentCount);
+
+    for (uint32_t i = 0; i < intentCount; i++)
     {
         const IR_Record* r = &intents[i];
 
@@ -74,6 +123,7 @@ void ResolveLifetime(
             sizeof(out));
     }
 }
+
 void ResolveSpawning()
 {
 
@@ -86,7 +136,68 @@ void RegisterGameResolvers(InteractionResolver* resolver)
 }
 
 
+void GamePool_ApplyChanges(void)
+{
+    uint32_t count;
+    const IR_Record* changes =
+        IR_GetChanges(&gamePool.resolver, &count);
 
+    for (uint32_t i = 0; i < count; i++)
+    {
+        const IR_Record* r = &changes[i];
+
+        switch (r->type)
+        {
+        case IR_CHANGE_DAMAGE:
+        {
+            DamageChange* c =
+                (DamageChange*)r->data;
+
+            HealthStats* health =
+                &gamePool.healthStats[c->target];
+
+            health->currentHealth -= c->amount;
+
+            if (health->currentHealth < 0)
+                health->currentHealth = 0;
+
+            gamePool.pool->health[c->target] =
+                health->currentHealth;
+        }
+        break;
+
+        case IR_CHANGE_HEAL:
+        {
+            HealChange* c =
+                (HealChange*)r->data;
+
+            HealthStats* health =
+                &gamePool.healthStats[c->target];
+
+            health->currentHealth += c->amount;
+
+            if (health->currentHealth > health->maxHealth)
+                health->currentHealth =
+                health->maxHealth;
+
+            gamePool.pool->health[c->target] =
+                health->currentHealth;
+        }
+        break;
+
+        case IR_CHANGE_DESTROY:
+        {
+            DestroyChange* c =
+                (DestroyChange*)r->data;
+
+            MarkPendingDestroy(
+                gamePool.pool,
+                c->entity);
+        }
+        break;
+        }
+    }
+}
 
 void GamePool_Init(EntityPool* pool)
 {

@@ -177,3 +177,5 @@ float GamePool_GetEffectiveMoveSpeed(int entity);
 */
 
 void ResolveHealth(InteractionResolver* resolver, void* userData);
+
+void GamePool_ApplyChanges(void);

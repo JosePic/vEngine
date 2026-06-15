@@ -1,6 +1,6 @@
 # Ignore generated files
 # ...
-
+C:\libs\raylib\projects\VS2022\.vs
 # Ignore VIM's backup generated files
 *.swp
 *.swo

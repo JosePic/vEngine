@@ -5,6 +5,7 @@
 #include "physics_system.h"
 #include "game_health_system.h"
 #include "projectile.h"
+#include <game_pool_data.h>
 
 // ---------------------------------------------------------------------------
 // System functions
@@ -187,6 +188,9 @@ void RunFrame(EntityPool* pool, Camera* camera, int playerIdx,
     GatherInput(pool, *camera, playerIdx, selected, fs);
 
     Simulate(pool, playerIdx, dt, fs, systems, &systemCount);
+    IR_Run(&gamePool.resolver);
+
+    GamePool_ApplyChanges();
 
     CleanupDead(pool);
 
