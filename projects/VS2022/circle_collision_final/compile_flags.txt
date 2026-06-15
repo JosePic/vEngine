@@ -1,0 +1,4 @@
+# -IC:\libs\raylib\src
+# -IC:\libs\raylib\build\raylib\include
+-IC:\libs\raylib\projects\VS2022\circle_collision\src
+-IC:\libs\raylib\projects\VS2022\circle_collision\include

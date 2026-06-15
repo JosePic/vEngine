@@ -171,3 +171,9 @@ float GamePool_GetEffectiveAttackCooldown(int entity);
  * Get effective move speed (including buffs/stats).
  */
 float GamePool_GetEffectiveMoveSpeed(int entity);
+
+/*
+    Resolver
+*/
+
+void ResolveHealth(InteractionResolver* resolver, void* userData);

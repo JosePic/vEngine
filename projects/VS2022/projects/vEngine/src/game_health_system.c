@@ -39,6 +39,100 @@ typedef struct
     Vector3 dir;
 } SpawnProjectileIntent;
 
+
+typedef enum
+{
+    IR_CHANGE_DAMAGE,
+    IR_CHANGE_HEAL,
+    IR_CHANGE_DESTROY,
+    IR_CHANGE_SPAWN
+} GameChangeType;
+
+typedef struct
+{
+    int target;
+    int amount;
+} DamageChange;
+
+typedef struct
+{
+    int target;
+    int amount;
+} HealChange;
+
+typedef struct
+{
+    int entity;
+} DestroyChange;
+
+
+
+void ResolveHealth(
+    InteractionResolver* resolver,
+    void* userData)
+{
+    (void)userData;
+
+    uint32_t count;
+    const IR_Record* intents =
+        IR_GetIntents(resolver, &count);
+
+    for (uint32_t i = 0; i < count; i++)
+    {
+        const IR_Record* r = &intents[i];
+
+        switch (r->type)
+        {
+        case IR_INTENT_DAMAGE:
+        {
+            DamageIntent* in =
+                (DamageIntent*)r->data;
+
+            int finalDamage =
+                (int)ceilf(
+                    HealthSystem_CalculateFinalDamage(
+                        in->target,
+                        in->damage,
+                        in->damageType));
+
+            DamageChange out =
+            {
+                .target = in->target,
+                .amount = finalDamage
+            };
+
+            IR_SubmitChange(
+                resolver,
+                IR_CHANGE_DAMAGE,
+                &out,
+                sizeof(out));
+        }
+        break;
+
+        case IR_INTENT_HEAL:
+        {
+            HealIntent* in =
+                (HealIntent*)r->data;
+
+            HealChange out =
+            {
+                .target = in->target,
+                .amount = in->amount
+            };
+
+            IR_SubmitChange(
+                resolver,
+                IR_CHANGE_HEAL,
+                &out,
+                sizeof(out));
+        }
+        break;
+        }
+    }
+}
+
+
+
 void HealthSystem_DealDamage(int target, float baseDamage, DamageType type, int source)
 {
     DamageIntent intent =
@@ -54,7 +148,7 @@ void HealthSystem_DealDamage(int target, float baseDamage, DamageType type, int 
         IR_INTENT_DAMAGE,
         &intent,
         sizeof(intent));
-    GamePool_TakeDamage(target, baseDamage, type, source);
+    //GamePool_TakeDamage(target, baseDamage, type, source);
 }
 
 void HealthSystem_Heal(

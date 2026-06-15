@@ -12,15 +12,67 @@ GamePool gamePool = { 0 };
 *  Temporarily putting all resolver logic here, this should be moved to its own place.
 */
 
-void ResolveHealth()
+
+typedef enum
 {
+    IR_INTENT_DAMAGE,
+    IR_INTENT_HEAL,
+    IR_INTENT_DESTROY,
+    IR_INTENT_SPAWN_PROJECTILE
+} GameIntentType;
 
-}
-
-
-void ResolveLifetime()
+typedef enum
 {
+    IR_CHANGE_DAMAGE,
+    IR_CHANGE_HEAL,
+    IR_CHANGE_DESTROY,
+    IR_CHANGE_SPAWN
+} GameChangeType;
 
+typedef struct
+{
+    int entity;
+} DestroyIntent;
+
+
+typedef struct
+{
+    int entity;
+} DestroyChange;
+
+
+
+void ResolveLifetime(
+    InteractionResolver* resolver,
+    void* userData)
+{
+    (void)userData;
+
+    uint32_t count;
+    const IR_Record* intents =
+        IR_GetIntents(resolver, &count);
+
+    for (uint32_t i = 0; i < count; i++)
+    {
+        const IR_Record* r = &intents[i];
+
+        if (r->type != IR_INTENT_DESTROY)
+            continue;
+
+        DestroyIntent* in =
+            (DestroyIntent*)r->data;
+
+        DestroyChange out =
+        {
+            .entity = in->entity
+        };
+
+        IR_SubmitChange(
+            resolver,
+            IR_CHANGE_DESTROY,
+            &out,
+            sizeof(out));
+    }
 }
 void ResolveSpawning()
 {
