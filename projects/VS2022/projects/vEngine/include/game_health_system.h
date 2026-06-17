@@ -44,3 +44,8 @@ void SysHealthCleanup(EntityPool* pool, const Query* q, float dt, void* user);
 
 
 void SysHealthGetAllUnitsHP(EntityPool* pool,  Query* q);
+
+float HealthSystem_CalculateFinalDamage(
+    int target,
+    float baseDamage,
+    DamageType type);

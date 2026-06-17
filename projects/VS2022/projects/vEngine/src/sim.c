@@ -7,6 +7,7 @@
 #include "projectile.h"
 #include <game_pool_data.h>
 
+
 // ---------------------------------------------------------------------------
 // System functions
 // ---------------------------------------------------------------------------
@@ -162,12 +163,18 @@ static void Simulate(EntityPool* pool, int playerIdx, float dt, FrameState* fs,
     RunSystems(systems, *systemCount, PHASE_ANIMATION, pool, dt, &playerIdx);
 }
 
+
+
 void RunFrame(EntityPool* pool, Camera* camera, int playerIdx,
     bool selected[MAX_ENTITIES], FrameState* fs,
     float* camYaw, float* camPitch, float* camDist) {
     static System systems[16];
     static int systemCount = 0;
+    static uint32_t frameCounter = 0;
+    frameCounter++;
 
+
+    VInspect_BeginFrame(&g_InspectorDB, frameCounter);
     float dt = GetFrameTime();
 
     memcpy(pool->prevPositions, pool->positions, sizeof(Vector3) * pool->count);
@@ -177,6 +184,8 @@ void RunFrame(EntityPool* pool, Camera* camera, int playerIdx,
     bool camRotate =
         IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT) ||
         IsMouseButtonDown(MOUSE_BUTTON_MIDDLE);
+    
+    GamePool_BeginFrame();
 
     Vector3 camFocus = GetSelectionCenter(pool, selected, playerIdx);
     UpdateIsometricCamera(camera, camFocus, camYaw, camPitch, camDist, camRotate);
@@ -187,13 +196,18 @@ void RunFrame(EntityPool* pool, Camera* camera, int playerIdx,
 
     GatherInput(pool, *camera, playerIdx, selected, fs);
 
+    VInspect_BeginSystem(&g_InspectorDB, SYS_COMBAT);
     Simulate(pool, playerIdx, dt, fs, systems, &systemCount);
+    VInspect_EndSystem(&g_InspectorDB);
+
+    VInspect_BeginSystem(&g_InspectorDB, SYS_RESOLVER);
     IR_Run(&gamePool.resolver);
-
     GamePool_ApplyChanges();
+    VInspect_EndSystem(&g_InspectorDB);
 
+    VInspect_BeginSystem(&g_InspectorDB, SYS_CLEANUP);
     CleanupDead(pool);
-
+    VInspect_EndSystem(&g_InspectorDB);
     // Structural changes happened during sim — rebuild so later phases
     // (cleanup, render) see a consistent entity set.
     BuildQueries(pool, fs);

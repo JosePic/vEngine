@@ -1,32 +1,36 @@
 #include "interaction_resolver.h"
-
 #include <string.h>
+#include <vinspector.h>
+#include <vengine.h>
+#include <sim.h>
+
+static uint64_t g_GlobalTxCounter = 1;
 
 static bool IR_PushRecord(
-    IR_Record* buffer,
-    uint32_t* count,
-    uint32_t capacity,
-    uint32_t type,
-    const void* data,
-    uint32_t size)
+    IR_Record* buffer, uint32_t* count, uint32_t capacity,
+    uint32_t type, const void* data, uint32_t size)
 {
-    if (*count >= capacity)
-        return false;
-
-    if (size > IR_PAYLOAD_SIZE)
-        return false;
+    if (*count >= capacity || size > IR_PAYLOAD_SIZE) return false;
 
     IR_Record* r = &buffer[*count];
-
+    r->id = g_GlobalTxCounter++; // Assign causality ID
     r->type = type;
     r->size = size;
 
-    if (size > 0)
-    {
-        memcpy(r->data, data, size);
-    }
-
+    if (size > 0) memcpy(r->data, data, size);
     (*count)++;
+
+    // LOG TO DATABASE:
+    VTransactionNode tx = {
+        .id = r->id,
+        .sourceSystem = SYS_COMBAT, // Or map to whoever is currently active
+        .intentType = type,
+        .sourceEntity = -1, // You could pull this from your struct if needed
+        .targetEntity = -1,
+        .payloadSize = size
+    };
+    if (size > 0) memcpy(tx.payload, data, size);
+    VInspect_LogTransaction(&g_InspectorDB, &tx);
 
     return true;
 }

@@ -5,133 +5,52 @@
 #include "vengine.h"
 #include <math.h>
 #include "interaction_resolver.h"
-typedef enum
-{
-    IR_INTENT_DAMAGE,
-    IR_INTENT_HEAL,
-    IR_INTENT_DESTROY,
-    IR_INTENT_SPAWN_PROJECTILE
-} GameIntentType;
+#include <sim.h>
+#define COMP_HEALTH 1
+#define FIELD_HP 1
+#define REASON_DAMAGE 1
+#define QUERY_ALIVE 1
 
-typedef struct
-{
-    int target;
-    float damage;
-    DamageType damageType;
-    int source;
-} DamageIntent;
-
-typedef struct
-{
-    int target;
-    int amount;
-} HealIntent;
-
-typedef struct
-{
-    int entity;
-} DestroyIntent;
-
-typedef struct
-{
-    int owner;
-    Vector3 start;
-    Vector3 dir;
-} SpawnProjectileIntent;
-
-
-typedef enum
-{
-    IR_CHANGE_DAMAGE,
-    IR_CHANGE_HEAL,
-    IR_CHANGE_DESTROY,
-    IR_CHANGE_SPAWN
-} GameChangeType;
-
-typedef struct
-{
-    int target;
-    int amount;
-} DamageChange;
-
-typedef struct
-{
-    int target;
-    int amount;
-} HealChange;
-
-typedef struct
-{
-    int entity;
-} DestroyChange;
-
-
-
-void ResolveHealth(
-    InteractionResolver* resolver,
-    void* userData)
-{
-    (void)userData;
-
+void ResolveHealth(InteractionResolver* resolver, void* userData) {
     uint32_t count;
-    const IR_Record* intents =
-        IR_GetIntents(resolver, &count);
+    const IR_Record* intents = IR_GetIntents(resolver, &count);
 
-    for (uint32_t i = 0; i < count; i++)
-    {
+    for (uint32_t i = 0; i < count; i++) {
         const IR_Record* r = &intents[i];
+        if (r->type != IR_INTENT_DAMAGE) continue;
 
-        switch (r->type)
-        {
-        case IR_INTENT_DAMAGE:
-        {
-            DamageIntent* in =
-                (DamageIntent*)r->data;
+        DamageIntent* in = (DamageIntent*)r->data;
+        HealthStats* health = &gamePool.healthStats[in->target];
 
-            int finalDamage =
-                (int)ceilf(
-                    HealthSystem_CalculateFinalDamage(
-                        in->target,
-                        in->damage,
-                        in->damageType));
+        // 1. Snapshot BEFORE state
+        float oldHp = health->currentHealth;
 
-            DamageChange out =
-            {
-                .target = in->target,
-                .amount = finalDamage
+        // 2. Perform the logic
+        float finalDmg = HealthSystem_CalculateFinalDamage(in->target, in->damage, in->damageType);
+        health->currentHealth -= finalDmg;
+
+        // 3. Snapshot AFTER state and Log Mutation
+        if (oldHp != health->currentHealth) {
+            VMutationRecord mut = {
+                .transactionId = r->id,     // The exact intent that caused this
+                .reasonId = REASON_DAMAGE,
+                .entityId = in->target,
+                .componentId = COMP_HEALTH,
+                .fieldId = FIELD_HP
             };
+            // Copy pure floats directly into the 64-bit unions
+            mut.oldVal.f32[0] = oldHp;
+            mut.newVal.f32[0] = health->currentHealth;
 
-            IR_SubmitChange(
-                resolver,
-                IR_CHANGE_DAMAGE,
-                &out,
-                sizeof(out));
-        }
-        break;
+            VInspect_LogMutation(&g_InspectorDB, &mut);
 
-        case IR_INTENT_HEAL:
-        {
-            HealIntent* in =
-                (HealIntent*)r->data;
-
-            HealChange out =
-            {
-                .target = in->target,
-                .amount = in->amount
-            };
-
-            IR_SubmitChange(
-                resolver,
-                IR_CHANGE_HEAL,
-                &out,
-                sizeof(out));
-        }
-        break;
+            // 4. Record Query Exclusion (Did the Goblin die?)
+            if (oldHp > 0.0f && health->currentHealth <= 0.0f) {
+                VInspect_LogQueryEvent(&g_InspectorDB, QUERY_ALIVE, in->target, false, r->id);
+            }
         }
     }
 }
-
-
 
 void HealthSystem_DealDamage(int target, float baseDamage, DamageType type, int source)
 {

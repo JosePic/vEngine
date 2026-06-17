@@ -154,6 +154,7 @@
     <ClCompile Include="src\render.c" />
     <ClCompile Include="src\sim.c" />
     <ClCompile Include="src\system.c" />
+    <ClCompile Include="src\vinspector.c" />
     <ClCompile Include="src\world.c" />
   </ItemGroup>
   <ItemGroup>
@@ -178,6 +179,7 @@
     <ClInclude Include="include\skinning_worker.h" />
     <ClInclude Include="include\system.h" />
     <ClInclude Include="include\vengine.h" />
+    <ClInclude Include="include\vinspector.h" />
     <ClInclude Include="include\vmodel.h" />
     <ClInclude Include="include\vmodel_types.h" />
   </ItemGroup>

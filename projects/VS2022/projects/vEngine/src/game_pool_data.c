@@ -13,47 +13,6 @@ GamePool gamePool = { 0 };
 */
 
 
-typedef enum
-{
-    IR_INTENT_DAMAGE,
-    IR_INTENT_HEAL,
-    IR_INTENT_DESTROY,
-    IR_INTENT_SPAWN_PROJECTILE
-} GameIntentType;
-
-typedef enum
-{
-    IR_CHANGE_DAMAGE,
-    IR_CHANGE_HEAL,
-    IR_CHANGE_DESTROY,
-    IR_CHANGE_SPAWN
-} GameChangeType;
-
-typedef struct
-{
-    int entity;
-} DestroyIntent;
-
-
-typedef struct
-{
-    int entity;
-} DestroyChange;
-
-
-typedef struct
-{
-    int target;
-    int amount;
-} DamageChange;
-
-
-typedef struct
-{
-    int target;
-    int amount;
-} HealChange;
-
 void ResolveLifetime(
     InteractionResolver* resolver,
     void* userData)

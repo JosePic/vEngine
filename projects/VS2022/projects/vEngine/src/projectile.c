@@ -1,7 +1,8 @@
 #include "vengine.h"
 #include "game_health_system.h"
 #include "query.h"
-
+#include "interaction_resolver.h"
+#include "game_pool_data.h"
 /**
  * Projectile Hit System
  *
@@ -10,6 +11,8 @@
  */
 
 static bool projectileHit[MAX_ENTITIES] = { 0 };
+
+
 
 void UpdateProjectileHits(EntityPool* pool, const int* entities, int count)
 {
@@ -60,7 +63,20 @@ void UpdateProjectileHits(EntityPool* pool, const int* entities, int count)
             if (distSq < minDistSq) {
                 // Hit detected!
                 float baseDamage = 200.0f;
-                HealthSystem_DealDamage(i, baseDamage, DAMAGE_PHYSICAL, owner);
+                DamageIntent intent =
+                {
+                    .target = i,
+                    .damage = baseDamage,
+                    .damageType = DAMAGE_PHYSICAL,
+                    .source = projectile
+                };
+
+                IR_SubmitIntent(
+                    &gamePool.resolver,
+                    IR_INTENT_DAMAGE,
+                    &intent,
+                    sizeof(intent));
+
                 projectileHit[projectile] = true;
                 HealthSystem_Kill(projectile);
                 break;

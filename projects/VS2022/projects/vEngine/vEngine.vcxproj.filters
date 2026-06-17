@@ -81,6 +81,9 @@
     <ClCompile Include="src\interaction_resolver.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\vinspector.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\raylib.h">
@@ -150,6 +153,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\interaction_resolver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\vinspector.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

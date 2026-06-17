@@ -24,6 +24,67 @@ typedef struct
     Vector3 dir;
 } PendingSpawn;
 
+typedef enum
+{
+    IR_INTENT_DAMAGE,
+    IR_INTENT_HEAL,
+    IR_INTENT_DESTROY,
+    IR_INTENT_SPAWN_PROJECTILE
+} GameIntentType;
+
+typedef struct
+{
+    int target;
+    float damage;
+    DamageType damageType;
+    int source;
+} DamageIntent;
+
+typedef struct
+{
+    int target;
+    int amount;
+} HealIntent;
+
+typedef struct
+{
+    int entity;
+} DestroyIntent;
+
+typedef struct
+{
+    int owner;
+    Vector3 start;
+    Vector3 dir;
+} SpawnProjectileIntent;
+
+
+
+typedef enum
+{
+    IR_CHANGE_DAMAGE,
+    IR_CHANGE_HEAL,
+    IR_CHANGE_DESTROY,
+    IR_CHANGE_SPAWN
+} GameChangeType;
+
+typedef struct
+{
+    int target;
+    int amount;
+} DamageChange;
+
+typedef struct
+{
+    int target;
+    int amount;
+} HealChange;
+
+typedef struct
+{
+    int entity;
+} DestroyChange;
+
 
 // ---------------------------------------------------------------------------
 // GamePool: Parallel storage for all game-specific data

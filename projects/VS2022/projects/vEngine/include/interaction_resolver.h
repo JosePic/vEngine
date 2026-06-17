@@ -33,7 +33,7 @@ typedef struct
 {
     uint32_t type;
     uint32_t size;
-
+    uint64_t id;
     uint8_t data[IR_PAYLOAD_SIZE];
 
 } IR_Record;
